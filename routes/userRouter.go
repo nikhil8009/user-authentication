@@ -1,13 +1,13 @@
 package routes
 
 import (
-	controller "user-athentication-golang/controllers"
-	"user-athentication-golang/middleware"
+	controller "user-athentication/controllers"
+	"user-athentication/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-//UserRoutes function
+// UserRoutes function
 func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.Use(middleware.Authentication())
 	incomingRoutes.GET("/users", controller.GetUsers())
