@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"net/http"
@@ -225,6 +227,44 @@ func GetUser() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, user)
+
+	}
+}
+
+func UploadFile() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId, _ := c.Get("uid")
+		// var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		file, err := c.FormFile("file")
+		if err != nil {
+			fmt.Println(err)
+			c.String(http.StatusBadRequest, "get form err: %s", err.Error())
+			return
+		}
+
+		cwd, _ := os.Getwd()
+		if err := os.Mkdir("assets", os.ModePerm); err != nil {
+			fmt.Println(err)
+		}
+
+		path := filepath.Join(cwd, "assets", file.Filename)
+		newFilePath := filepath.FromSlash(path)
+
+		if err := c.SaveUploadedFile(file, newFilePath); err != nil {
+			c.String(http.StatusBadRequest, "upload file err: %s", err.Error())
+		}
+
+		var user models.User
+
+		error := userCollection.FindOneAndUpdate(c, bson.M{"user_id": userId}, bson.M{"$set": bson.M{"image": file.Filename}}).Decode(&user)
+
+		fmt.Println(error)
+		if error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"msg": "File uploaded successfully"})
 
 	}
 }
