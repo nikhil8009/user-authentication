@@ -237,7 +237,7 @@ func UploadFile() gin.HandlerFunc {
 		// var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		file, err := c.FormFile("file")
 		if err != nil {
-			fmt.Println(err)
+
 			c.String(http.StatusBadRequest, "get form err: %s", err.Error())
 			return
 		}
@@ -254,17 +254,63 @@ func UploadFile() gin.HandlerFunc {
 			c.String(http.StatusBadRequest, "upload file err: %s", err.Error())
 		}
 
-		var user models.User
+		error := userCollection.FindOneAndUpdate(c, bson.M{"user_id": userId}, bson.M{"$set": bson.M{"image": file.Filename}})
 
-		error := userCollection.FindOneAndUpdate(c, bson.M{"user_id": userId}, bson.M{"$set": bson.M{"image": file.Filename}}).Decode(&user)
-
-		fmt.Println(error)
-		if error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if error.Err() != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": error.Err()})
 			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{"msg": "File uploaded successfully"})
 
+	}
+
+}
+
+func UpdateUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := c.Param("user_id")
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var user models.User
+
+		if err := c.BindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		}
+
+		jsonData := bson.M{}
+		if user.First_name != nil {
+			jsonData["first_name"] = user.First_name
+		}
+		if user.Last_name != nil {
+			jsonData["last_name"] = user.Last_name
+		}
+
+		err := userCollection.FindOneAndUpdate(ctx, bson.M{"user_id": userId}, bson.M{"$set": jsonData})
+		defer cancel()
+		if err.Err() != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Err()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"msg": "User updated successfully"})
+	}
+}
+
+func DeleteUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := c.Param("user_id")
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		err := userCollection.FindOneAndDelete(ctx, bson.M{"user_id": userId})
+
+		defer cancel()
+
+		if err.Err() != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "This user doesn't exist"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"msg": "User deleted successfully"})
 	}
 }
