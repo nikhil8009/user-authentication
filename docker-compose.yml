@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    networks: # Networks to join (Services on the same network can communicate with each other using their name)
+      - backend
+    volumes:
+      - .:/opt/app/api
+    ports:
+      - "8000:8000"
+
+networks:
+  backend:

@@ -36,7 +36,7 @@ func GenerateAllTokens(email string, firstName string, lastName string, uid stri
 		Last_name:  lastName,
 		Uid:        uid,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(36)).Unix(),
 		},
 	}
 
@@ -68,13 +68,12 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 	claims, ok := token.Claims.(*SignedDetails)
 	if !ok {
 		msg = "Token is invalid"
-		msg = err.Error()
 		return
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
 		msg = "Token is expired"
-		msg = err.Error()
+
 		return
 	}
 

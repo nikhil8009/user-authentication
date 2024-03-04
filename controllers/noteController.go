@@ -63,10 +63,10 @@ func GetNotes() gin.HandlerFunc {
 			return
 		}
 
-		var notes []models.Note
+		var notes []models.Note = make([]models.Note, 0)
 
 		if err = result.All(ctx, &notes); err != nil {
-			log.Fatal(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		}
 
 		defer cancel()
@@ -121,24 +121,31 @@ func UpdateNote() gin.HandlerFunc {
 	}
 }
 
+type List struct {
+	Ids []primitive.ObjectID `bson:"ids" binding:"required"`
+}
+
 func DeleteNote() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		noteId := c.Param("id")
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-		objectId, error := primitive.ObjectIDFromHex(noteId)
-		if error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": error.Error()})
-			defer cancel()
+		data := new(List)
+
+		if error := c.BindJSON(&data); error != nil {
+			fmt.Println("error occured")
+		}
+		fmt.Println(data)
+		result, err := noteCollection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": data.Ids}})
+		defer cancel()
+
+		if result.DeletedCount <= 0 {
+			c.JSON(http.StatusNotFound, gin.H{"msg": "No records found to delete"})
 			return
 		}
 
-		err := noteCollection.FindOneAndDelete(ctx, bson.M{"_id": objectId})
-		defer cancel()
-
-		if err.Err() != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Err()})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 			return
 		}
 
