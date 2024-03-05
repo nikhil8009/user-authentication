@@ -72,13 +72,12 @@ func SignUp() gin.HandlerFunc {
 		count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
 		defer cancel()
 		if err != nil {
-			log.Panic(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": "error occured while checking for the email"})
 			return
 		}
 
 		if count > 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": "this email already exists"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "Email already exists"})
 			return
 		}
 
