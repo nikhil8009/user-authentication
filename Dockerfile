@@ -15,4 +15,3 @@ COPY . .
 CMD ["go", "run", "main.go"]
 
 # Exposing server port
-EXPOSE 8080
