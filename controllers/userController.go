@@ -59,26 +59,25 @@ func SignUp() gin.HandlerFunc {
 		var user models.User
 
 		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 			cancel()
 		}
 
 		validationErr := validate.Struct(user)
 		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"msg": validationErr.Error()})
 			cancel()
 		}
 
 		count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
 		defer cancel()
 		if err != nil {
-			log.Panic(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while checking for the email"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "error occured while checking for the email"})
 			return
 		}
 
 		if count > 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "this email already exists"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "Email already exists"})
 			return
 		}
 
@@ -89,12 +88,12 @@ func SignUp() gin.HandlerFunc {
 		defer cancel()
 		if err != nil {
 			log.Panic(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while checking for the phone number"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "error occured while checking for the phone number"})
 			return
 		}
 
 		if count > 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "this email or phone number already exists"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "this email or phone number already exists"})
 			return
 		}
 
@@ -118,7 +117,6 @@ func SignUp() gin.HandlerFunc {
 	}
 }
 
-// Login is the api used to tget a single user
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -128,6 +126,7 @@ func Login() gin.HandlerFunc {
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			cancel()
+			return
 		}
 
 		err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&foundUser)
@@ -140,12 +139,12 @@ func Login() gin.HandlerFunc {
 		passwordIsValid, msg := VerifyPassword(*user.Password, *foundUser.Password)
 		defer cancel()
 		if !passwordIsValid {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": msg})
 			return
 		}
 
 		if foundUser.Email == nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "user not found"})
 			return
 		}
 		token, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, foundUser.User_id)
@@ -199,7 +198,7 @@ func GetUsers() gin.HandlerFunc {
 			matchStage, groupStage, projectStage})
 		defer cancel()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while listing user items"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": "error occured while listing user items"})
 		}
 		var allusers []bson.M
 		if err = result.All(ctx, &allusers); err != nil {
@@ -210,7 +209,6 @@ func GetUsers() gin.HandlerFunc {
 	}
 }
 
-// GetUser is the api used to tget a single user
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId := c.Param("user_id")
@@ -222,7 +220,7 @@ func GetUser() gin.HandlerFunc {
 		err := userCollection.FindOne(ctx, bson.M{"user_id": userId}).Decode(&user)
 		defer cancel()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 			return
 		}
 
@@ -234,11 +232,12 @@ func GetUser() gin.HandlerFunc {
 func UploadFile() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId, _ := c.Get("uid")
-		// var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		file, err := c.FormFile("file")
 		if err != nil {
 
 			c.String(http.StatusBadRequest, "get form err: %s", err.Error())
+			defer cancel()
 			return
 		}
 
@@ -254,10 +253,10 @@ func UploadFile() gin.HandlerFunc {
 			c.String(http.StatusBadRequest, "upload file err: %s", err.Error())
 		}
 
-		error := userCollection.FindOneAndUpdate(c, bson.M{"user_id": userId}, bson.M{"$set": bson.M{"image": file.Filename}})
-
+		error := userCollection.FindOneAndUpdate(ctx, bson.M{"user_id": userId}, bson.M{"$set": bson.M{"image": file.Filename}})
+		defer cancel()
 		if error.Err() != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": error.Err()})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": error.Err()})
 			return
 		}
 
@@ -275,7 +274,7 @@ func UpdateUser() gin.HandlerFunc {
 		var user models.User
 
 		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 
 		}
 
@@ -290,7 +289,7 @@ func UpdateUser() gin.HandlerFunc {
 		err := userCollection.FindOneAndUpdate(ctx, bson.M{"user_id": userId}, bson.M{"$set": jsonData})
 		defer cancel()
 		if err.Err() != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Err()})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Err()})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"msg": "User updated successfully"})
