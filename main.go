@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"user-athentication/middleware"
 	routes "user-athentication/routes"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
+	router.Use(middleware.CORSMiddleware())
 	router.Static("/assets", "./assets")
 	routes.AuthRoutes(router)
 	routes.UserRoutes(router)
