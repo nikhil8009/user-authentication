@@ -36,10 +36,12 @@ jobs:
         REMOTE_USER: "ec2-user"
         TARGET: "/home/ec2-user/go/src/user-auth/"
 
-    - name: Restart server
-      uses: garygrossgarten/github-action-ssh@release
+    - name: ls -a via ssh
+      uses: fifsky/ssh-action@master
       with:
-        command: ls -a
+        command: |
+          cd /tmp
+          ls -a
         host: "ec2-3-21-94-125.us-east-2.compute.amazonaws.com"
-        username: "ec2-user"
-        privateKey: ${{ secrets.PRIVATE_KEY}}
+        user: "ec2-user"
+        key: ${{ secrets.PRIVATE_KEY}}
