@@ -32,7 +32,7 @@ jobs:
       env:
         SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         SOURCE: "./user-auth"
-        REMOTE_HOST: "ec2-3-21-94-125.us-east-2.compute.amazonaws.com"
+        REMOTE_HOST: ${{ secrets.SSH_HOST}}
         REMOTE_USER: "ec2-user"
         TARGET: "/home/ec2-user/go/src/user-auth/"
 
@@ -40,8 +40,7 @@ jobs:
       uses: fifsky/ssh-action@master
       with:
         command: |
-          cd /tmp
-          ls -a
-        host: "ec2-3-21-94-125.us-east-2.compute.amazonaws.com"
+          pmgo restart server0
+        host: ${{ secrets.SSH_HOST}}
         user: "ec2-user"
         key: ${{ secrets.PRIVATE_KEY}}
