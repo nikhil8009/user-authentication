@@ -38,6 +38,8 @@ jobs:
 
     - name: Execute SSH commmands on remote server
       uses: JimCronqvist/action-ssh@master
+      env:
+        NAME: "ec2-user"
       with:
         hosts: 'ec2-3-21-94-125.us-east-2.compute.amazonaws.com'
         privateKey: ${{ secrets.PRIVATE_KEY }}
