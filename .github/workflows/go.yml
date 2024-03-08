@@ -35,3 +35,5 @@ jobs:
         REMOTE_HOST: "ec2-3-21-94-125.us-east-2.compute.amazonaws.com"
         REMOTE_USER: "ec2-user"
         TARGET: "/home/ec2-user/go/src/user-auth/"
+        SCRIPT_AFTER: |
+          pmgo restart user-auth
