@@ -36,4 +36,4 @@ jobs:
         REMOTE_USER: "ec2-user"
         TARGET: "/home/ec2-user/go/src/user-auth/"
         SCRIPT_AFTER: |
-          pmgo restart user-auth
+          pmgo restart server0
