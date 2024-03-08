@@ -36,11 +36,10 @@ jobs:
         REMOTE_USER: "ec2-user"
         TARGET: "/home/ec2-user/go/src/user-auth/"
 
-    - name: Execute SSH commmands on remote server
-      uses: JimCronqvist/action-ssh@master
-      env:
-        NAME: "ec2-user"
+    - name: Restart server
+      uses: garygrossgarten/github-action-ssh@release
       with:
-        hosts: 'ec2-3-21-94-125.us-east-2.compute.amazonaws.com'
-        privateKey: ${{ secrets.PRIVATE_KEY }}
-        command: pmgo restart server0
+        command: ls -a
+        host: "ec2-3-21-94-125.us-east-2.compute.amazonaws.com"
+        username: "ec2-user"
+        privateKey: ${{ secrets.PRIVATE_KEY}}
