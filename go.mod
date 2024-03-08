@@ -1,4 +1,4 @@
-module user-athentication
+module user-auth
 
 go 1.15
 
