@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"user-athentication/database"
-	"user-athentication/models"
+	"user-auth/database"
+	"user-auth/models"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"

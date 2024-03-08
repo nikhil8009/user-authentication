@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"user-athentication/middleware"
-	routes "user-athentication/routes"
+	"user-auth/middleware"
+	routes "user-auth/routes"
 
 	"github.com/gin-gonic/gin"
 )

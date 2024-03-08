@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	helper "user-athentication/helpers"
+	helper "user-auth/helpers"
 
 	"github.com/gin-gonic/gin"
 )

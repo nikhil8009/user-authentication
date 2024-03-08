@@ -1,8 +1,8 @@
 package routes
 
 import (
-	controller "user-athentication/controllers"
-	"user-athentication/middleware"
+	controller "user-auth/controllers"
+	"user-auth/middleware"
 
 	"github.com/gin-gonic/gin"
 )

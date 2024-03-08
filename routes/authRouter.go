@@ -1,7 +1,7 @@
 package routes
 
 import (
-	controller "user-athentication/controllers"
+	controller "user-auth/controllers"
 
 	"github.com/gin-gonic/gin"
 )
