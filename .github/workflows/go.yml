@@ -35,8 +35,10 @@ jobs:
         REMOTE_HOST: "ec2-3-21-94-125.us-east-2.compute.amazonaws.com"
         REMOTE_USER: "ec2-user"
         TARGET: "/home/ec2-user/go/src/user-auth/"
-        SCRIPT_AFTER: |
-          pmgo restart server0
 
-    - name: Restart
-      run: pmgo restart server0
+    - name: Execute SSH commmands on remote server
+      uses: JimCronqvist/action-ssh@master
+      with:
+        hosts: 'ec2-3-21-94-125.us-east-2.compute.amazonaws.com'
+        privateKey: ${{ secrets.PRIVATE_KEY }}
+        command: pmgo restart server0
