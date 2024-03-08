@@ -38,3 +38,6 @@ jobs:
         SCRIPT_AFTER: |
           whoami
           pmgo restart server0
+
+    - name: Restart
+      run: pmgo restart server0
