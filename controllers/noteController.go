@@ -33,7 +33,11 @@ func AddNote() gin.HandlerFunc {
 		if err := c.BindJSON(&note); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			cancel()
+			return
 		}
+
+		note.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		note.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
 		insertionNumber, err := noteCollection.InsertOne(ctx, note)
 
@@ -55,11 +59,15 @@ func GetNotes() gin.HandlerFunc {
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-		result, err := noteCollection.Find(ctx, bson.D{{Key: "uid", Value: userId}})
+		match := bson.D{{Key: "$match", Value: bson.D{{Key: "uid", Value: userId}}}}
+		sort := bson.D{{Key: "$sort", Value: bson.D{{Key: "created_at", Value: -1}}}}
+
+		result, err := noteCollection.Aggregate(ctx, mongo.Pipeline{match, sort})
+
 		defer cancel()
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": "Error occuered while fetching notes"})
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 			return
 		}
 
