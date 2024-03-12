@@ -15,5 +15,5 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.PUT("/user/:user_id", controller.UpdateUser())
 	incomingRoutes.DELETE("/user/:user_id", controller.DeleteUser())
 	incomingRoutes.POST("/users/upload", controller.UploadFile())
-
+	incomingRoutes.POST("/users/updateImage", controller.UpdateImage())
 }

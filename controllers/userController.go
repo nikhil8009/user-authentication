@@ -217,6 +217,29 @@ func GetUser() gin.HandlerFunc {
 	}
 }
 
+func UpdateImage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId, _ := c.Get("uid")
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		var user models.User
+
+		if err := c.BindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			cancel()
+			return
+		}
+		error := userCollection.FindOneAndUpdate(ctx, bson.M{"user_id": userId}, bson.M{"$set": bson.M{"image": user.Image}})
+		defer cancel()
+		if error.Err() != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": error.Err()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"msg": "Image updated successfully"})
+	}
+}
+
 func UploadFile() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId, _ := c.Get("uid")
