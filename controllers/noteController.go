@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 	"user-auth/database"
@@ -22,24 +21,31 @@ func AddNote() gin.HandlerFunc {
 		userId, _ := c.Get("uid")
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-		var note models.Note
+		var notes []models.Note
 
-		note.ID = primitive.NewObjectID()
-		str, ok := userId.(string)
-		if ok {
-			note.Uid = str
-		}
-
-		if err := c.BindJSON(&note); err != nil {
+		if err := c.BindJSON(&notes); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			cancel()
 			return
 		}
 
-		note.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		note.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		insertArray := make([]interface{}, len(notes))
 
-		insertionNumber, err := noteCollection.InsertOne(ctx, note)
+		for i := range notes {
+
+			notes[i].ID = primitive.NewObjectID()
+			str, ok := userId.(string)
+			if ok {
+				notes[i].Uid = str
+			}
+
+			notes[i].Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+			notes[i].Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+			insertArray[i] = notes[i]
+		}
+
+		_, err := noteCollection.InsertMany(ctx, insertArray)
 
 		defer cancel()
 		if err != nil {
@@ -47,7 +53,7 @@ func AddNote() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, insertionNumber)
+		c.JSON(http.StatusOK, gin.H{"msg": "Notes inserted successfully"})
 
 	}
 }
@@ -90,47 +96,38 @@ func GetNotes() gin.HandlerFunc {
 
 func UpdateNote() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		noteId := c.Param("id")
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-		var note *models.Note
+		var notes []models.Note
 
-		if err := c.BindJSON(&note); err != nil {
+		if err := c.BindJSON(&notes); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 			defer cancel()
 			return
 		}
 
-		objectId, error := primitive.ObjectIDFromHex(noteId)
-		if error != nil {
-			log.Println(error.Error())
-			defer cancel()
-			return
+		var wm []mongo.WriteModel
+		for i := 0; i < len(notes); i++ {
+			jsonData := bson.M{"title": notes[i].Title, "description": notes[i].Description}
+
+			wm = append(wm, mongo.NewUpdateOneModel().SetFilter(bson.M{"timestamp": notes[i].TimeStamp}).SetUpdate(bson.M{"$set": jsonData}))
 		}
 
-		jsonData := bson.M{}
-		if note.Title != nil {
-			jsonData["title"] = note.Title
-		}
-		if note.Description != nil {
-			jsonData["description"] = note.Description
-		}
+		_, err := noteCollection.BulkWrite(ctx, wm)
 
-		err := noteCollection.FindOneAndUpdate(ctx, bson.M{"_id": objectId}, bson.M{"$set": jsonData})
 		defer cancel()
-		fmt.Println(err.Err())
-		if err.Err() != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Err()})
+		fmt.Println(err)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"msg": "Note updated successfully"})
 	}
 }
 
 type List struct {
-	Ids []primitive.ObjectID `bson:"ids" binding:"required"`
+	Timestamps []string `json:"timestamps" binding:"required"`
 }
 
 func DeleteNote() gin.HandlerFunc {
@@ -143,8 +140,8 @@ func DeleteNote() gin.HandlerFunc {
 		if error := c.BindJSON(&data); error != nil {
 			fmt.Println("error occured")
 		}
-		fmt.Println(data)
-		result, err := noteCollection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": data.Ids}})
+
+		result, err := noteCollection.DeleteMany(ctx, bson.M{"timestamp": bson.M{"$in": data.Timestamps}})
 		defer cancel()
 
 		if result.DeletedCount <= 0 {
