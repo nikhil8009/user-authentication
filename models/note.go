@@ -13,4 +13,5 @@ type Note struct {
 	Uid         string             `json:"uid"`
 	Created_at  time.Time          `json:"created_at"`
 	Updated_at  time.Time          `json:"updated_at"`
+	TimeStamp   string             `json:"time_stamp"`
 }
